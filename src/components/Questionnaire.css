@@ -1,0 +1,9 @@
+.tooltip {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    fill: #fff;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  

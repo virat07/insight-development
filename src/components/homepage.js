@@ -9,6 +9,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { TextField } from "@mui/material";
+import { select } from "d3-selection";
+import * as d3 from "d3";
+import "./Questionnaire.css";
 // import logo from '../../public/logo.png';
 export const HomePageComponent = () => {
   const scrollRef = useRef(null);
@@ -69,21 +72,25 @@ export const HomePageComponent = () => {
       name: "Fiery Red",
       description:
         "Direct, decisive, focused, proactive, determined, purposeful, courageous, confident",
+      color: "#FF0000",
     },
     {
       name: "Cool Blue",
       description:
         "Detailed, reserved, analytical, disciplined, diligent, thoughtful, consistent, objective",
+      color: "#0000FF",
     },
     {
       name: "Earth Green",
       description:
         "Considerate, service-oriented, accommodating, appreciative, supportive, reliable, patient, valuing",
+      color: "#008000",
     },
     {
       name: "Sunshine Yellow",
       description:
         "Enthusiastic, adaptable, empowering, flexible, encouraging, interactive, engaging, dynamic",
+      color: "#FFFF00",
     },
   ];
 
@@ -94,6 +101,7 @@ export const HomePageComponent = () => {
   const [email, setEmail] = useState("");
   const [showResult, setShowResult] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [startQuestionnaire, setStartQuestionnaire] = useState(false);
   const handleResponse = (questionIndex, response) => {
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
@@ -115,7 +123,6 @@ export const HomePageComponent = () => {
       setTransition(false);
     }
   }, [transition, currentQuestion, questionnaire.length]);
-  
 
   const handleModalClose = () => {
     setEmail("");
@@ -129,12 +136,6 @@ export const HomePageComponent = () => {
     setEmailSent(true);
   };
 
-  const handleEmailSubmit = () => {
-    // Handle the email submission
-    // You can perform validation, make an API call, etc.
-    console.log(email);
-    setShowModal(false);
-  };
   const displayQuestionnaire = () => {
     const question = questionnaire[currentQuestion];
 
@@ -236,7 +237,119 @@ export const HomePageComponent = () => {
     }
     return null;
   };
+  const createPieChart = () => {
+    const data = userResponses.map((response, index) => ({
+      question: index + 1,
+      response,
+    }));
 
+    const width = 400;
+    const height = 300;
+    const radius = Math.min(width, height) / 2;
+
+    const svg = select("#chart-container")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+    const colorScale = d3
+      .scaleOrdinal()
+      .domain(personalityTraits.map((trait) => trait.name))
+      .range(personalityTraits.map((trait) => trait.color)); // Use personality trait colors
+
+    const pie = d3
+      .pie()
+      .value((d) => d.response)
+      .sort(null);
+
+    const arc = d3.arc().innerRadius(0).outerRadius(radius);
+
+    const arcs = svg.selectAll("arc").data(pie(data)).enter();
+
+    arcs
+      .append("path")
+      .attr("d", arc)
+      .attr("fill", (d) =>
+        colorScale(personalityTraits[d.data.response - 1].name)
+      ) // Use colorScale with trait name
+      .on("mouseover", (event, d) => {
+        const trait = personalityTraits[d.data.response - 1].name;
+        const tooltip = select("#tooltip")
+          .style("opacity", 1)
+          .style("left", `${event.pageX}px`)
+          .style("top", `${event.pageY}px`);
+        tooltip.html(`Trait: ${trait}`);
+      })
+      .on("mouseout", () => {
+        select("#tooltip").style("opacity", 0);
+      });
+
+    const labelHeight = 20; // Define the desired height of each legend item
+
+    svg.selectAll("mydots")
+    .data(personalityTraits)
+    .enter()
+    .append("circle")
+    .attr("cx", 100)
+    .attr("cy", function(d, i) { return 100 + i * 25; })
+    .attr("r", 7)
+    .style("fill", function(d) { return colorScale(d.color); });
+  
+  // Add labels in the legend for each name
+  svg.selectAll("mylabels")
+    .data(personalityTraits)
+    .enter()
+    .append("text")
+    .attr("x", 120)
+    .attr("y", function(d, i) { return 100 + i * 25; })
+    .text(function(d) { return d.name; })
+    .attr("text-anchor", "left")
+    .style("fill", "black") // Set the text color to black
+    .style("alignment-baseline", "middle");
+
+    svg
+      .append("g")
+      .attr("class", "legend")
+      .attr("transform", `translate(0, ${height / 2 + 20})`)
+      .selectAll("rect")
+      .data(personalityTraits)
+      .enter()
+      .append("rect")
+      .attr("x", 10)
+      .attr("y", (d, i) => i * 30)
+      .attr("width", 20)
+      .attr("height", 20)
+      .attr("fill", (d) => colorScale(d.name)); // Use colorScale with trait name
+
+    svg
+      .selectAll(".legend-label")
+      .data(personalityTraits)
+      .enter()
+      .append("text")
+      .attr("class", "legend-label")
+      .attr("x", 40)
+      .attr("y", (d, i) => i * 30 + 15)
+      .text((d) => d.name);
+  };
+
+  useEffect(() => {
+    if (showResult) {
+      createPieChart();
+    }
+  }, [showResult]);
+
+  const handleResultClick = () => {
+    setShowResult(true);
+  };
+  const handleEmailSubmit = () => {
+    // Handle the email submission
+    // You can perform validation, make an API call, etc.
+    console.log(email);
+    setShowModal(false);
+    handleResultClick();
+  };
   return (
     <>
       <div class="shadow-lg">
@@ -258,13 +371,22 @@ export const HomePageComponent = () => {
             personalities that make our world so vibrant. Start exploring and
             unravel the intricacies of personality traits today!
           </section>
+          <div>
+            <Button
+              variant="contained"
+              onClick={() => {
+                handleScrollClick();
+                setStartQuestionnaire(true);
+              }}
+              className="bg-blue-700"
+            >
+              Get Started
+            </Button>
+          </div>
         </div>
-        <Button variant="contained" onClick={handleScrollClick}>
-          Contained
-        </Button>
       </div>
       <div ref={scrollRef} class="h-100">
-        {userResponses.length !== questionnaire.length ? (
+        {startQuestionnaire && userResponses.length !== questionnaire.length ? (
           <div class="flex justify-center items-center py-10 mx-10 ">
             {displayQuestionnaire()}
           </div>
@@ -308,6 +430,11 @@ export const HomePageComponent = () => {
             </DialogActions>
           </Dialog>
         )}
+        {showResult && <div id="chart-container" />}
+        {emailSent && <p>Thank you! Results will be sent to your email.</p>}
+        <Button variant="contained" onClick={handleResultClick}>
+          Show Results
+        </Button>
       </div>
     </>
   );
