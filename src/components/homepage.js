@@ -12,6 +12,9 @@ import { TextField } from "@mui/material";
 import { select } from "d3-selection";
 import * as d3 from "d3";
 import "./Questionnaire.css";
+import html2canvas from "html2canvas";
+import emailjs from "emailjs-com";
+
 // import logo from '../../public/logo.png';
 export const HomePageComponent = () => {
   const scrollRef = useRef(null);
@@ -102,6 +105,8 @@ export const HomePageComponent = () => {
   const [showResult, setShowResult] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [startQuestionnaire, setStartQuestionnaire] = useState(false);
+  const [isValidEmail, setIsValidEmail] = useState(true);
+
   const handleResponse = (questionIndex, response) => {
     setUserResponses((prevResponses) => {
       const updatedResponses = [...prevResponses];
@@ -115,25 +120,42 @@ export const HomePageComponent = () => {
   };
   useEffect(() => {
     if (transition) {
-      if (currentQuestion < questionnaire.length - 1) {
-        setCurrentQuestion(currentQuestion + 1);
-      } else {
-        setShowModal(true); // Open the email modal
-      }
-      setTransition(false);
+      const delay = 500; // Delay in milliseconds (1 second)
+
+      const timer = setTimeout(() => {
+        if (currentQuestion < questionnaire.length - 1) {
+          setCurrentQuestion(currentQuestion + 1);
+        } else {
+          setShowModal(true); // Open the email modal
+        }
+        setTransition(false);
+      }, delay);
+
+      return () => {
+        clearTimeout(timer); // Clear the timer if the component unmounts or the transition changes
+      };
     }
   }, [transition, currentQuestion, questionnaire.length]);
 
   const handleModalClose = () => {
-    setEmail("");
     setEmailSent(false);
     setShowModal(false);
   };
-
   const handleEmailChange = (event) => {
     setEmail(event.target.value);
-    console.log(email);
-    setEmailSent(true);
+  };
+  const handleEmailSubmit = (event) => {
+    if (validateEmail(email)) {
+
+      setShowModal(false);
+      handleResultClick();
+    //  setEmail(event.target.value);
+      setEmailSent(true);
+    } else {
+      setEmailSent(false);
+      setShowModal(false);
+      setIsValidEmail(false);
+    }
   };
 
   const displayQuestionnaire = () => {
@@ -286,105 +308,155 @@ export const HomePageComponent = () => {
         select("#tooltip").style("opacity", 0);
       });
 
-    const labelHeight = 20; // Define the desired height of each legend item
+    const legendWidth = 200;
+    const legendHeight = 30 * personalityTraits.length;
+    const legendMargin = 20;
 
-    svg.selectAll("mydots")
-    .data(personalityTraits)
-    .enter()
-    .append("circle")
-    .attr("cx", 100)
-    .attr("cy", function(d, i) { return 100 + i * 25; })
-    .attr("r", 7)
-    .style("fill", function(d) { return colorScale(d.color); });
-  
-  // Add labels in the legend for each name
-  svg.selectAll("mylabels")
-    .data(personalityTraits)
-    .enter()
-    .append("text")
-    .attr("x", 120)
-    .attr("y", function(d, i) { return 100 + i * 25; })
-    .text(function(d) { return d.name; })
-    .attr("text-anchor", "left")
-    .style("fill", "black") // Set the text color to black
-    .style("alignment-baseline", "middle");
-
-    svg
+    const legend = svg
       .append("g")
       .attr("class", "legend")
-      .attr("transform", `translate(0, ${height / 2 + 20})`)
-      .selectAll("rect")
-      .data(personalityTraits)
-      .enter()
-      .append("rect")
-      .attr("x", 10)
-      .attr("y", (d, i) => i * 30)
-      .attr("width", 20)
-      .attr("height", 20)
-      .attr("fill", (d) => colorScale(d.name)); // Use colorScale with trait name
+      .attr(
+        "transform",
+        `translate(${width - legendWidth - legendMargin}, ${
+          height / 2 - legendHeight / 2
+        })`
+      );
 
-    svg
-      .selectAll(".legend-label")
+    const legendItem = legend
+      .selectAll(".legend-item")
       .data(personalityTraits)
       .enter()
+      .append("g")
+      .attr("class", "legend-item")
+      .attr("transform", (d, i) => `translate(0, ${i * 30})`);
+
+    legendItem
+      .append("circle")
+      .attr("class", "legend-dot")
+      .attr("cx", 10)
+      .attr("cy", 5)
+      .attr("r", 7)
+      .style("fill", (d) => colorScale(d.name));
+
+    legendItem
+      .append("line")
+      .attr("class", "legend-line")
+      .attr("x1", 10)
+      .attr("x2", 30)
+      .attr("y1", 5)
+      .attr("y2", 5)
+      .style("stroke", (d) => colorScale(d.name))
+      .style("stroke-width", 2);
+
+    legendItem
       .append("text")
       .attr("class", "legend-label")
       .attr("x", 40)
-      .attr("y", (d, i) => i * 30 + 15)
+      .attr("y", 9) // Adjust the y position for vertical alignment
       .text((d) => d.name);
+  };
+
+  const sendEmail = (image, src, email) => {
+    emailjs
+      .send(
+        "service_26xm8be",
+        "template_lb9v2ul",
+        {
+          contentID: src,
+          htmlBody:
+            '<html><body>this is an <img src="cid:' +
+            src +
+            '"> embedded picture.</body></html>',
+          to_email: email,
+          insights: image,
+        },
+        "HiVn_9D3ex98vxf7u"
+      )
+      .then((response) => {
+        console.log("Email sent successfully!", response.text);
+      })
+      .catch((error) => {
+        console.error("Error sending email:", error);
+      });
   };
 
   useEffect(() => {
     if (showResult) {
       createPieChart();
+      const graphContainer = document.getElementById("chart-container");
+      const scaleFactor = 0.5;
+      graphContainer.style.transform = `scale(${scaleFactor})`;
+      html2canvas(graphContainer)
+        .then((canvas) => {
+          // Convert the canvas to a data URL
+          const dataUrl = canvas.toDataURL("image/png");
+
+          // Create a new image element
+          const image = new Image();
+          image.src = dataUrl;
+          console.log(image);
+          sendEmail(image, dataUrl, email);
+          // Append the image to the DOM or attach it to the email
+          // ...
+          graphContainer.style.transform = "scale(1)";
+        })
+        .catch((error) => {
+          console.error("Error converting graph to image:", error);
+        });
     }
   }, [showResult]);
 
   const handleResultClick = () => {
     setShowResult(true);
   };
-  const handleEmailSubmit = () => {
-    // Handle the email submission
-    // You can perform validation, make an API call, etc.
-    console.log(email);
-    setShowModal(false);
-    handleResultClick();
+
+  const validateEmail = (email) => {
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    return emailRegex.test(email);
   };
+
   return (
     <>
-      <div class="shadow-lg">
-        <div class="flex flex-row items-center p-24 ">
-          <img
-            alt="logo"
-            src="/logo.png"
-            class="basis-1/4 w-[100px] h-[230px]"
-          />
-          <span className="basis-1/3"></span>
-          <section class="basis-1/3">
-            Welcome to our Personality Traits website! Here, you can discover
-            fascinating insights about yourself and others through the
-            exploration of various personality traits. Whether you're curious
-            about your dominant traits or seeking to understand different
-            personality types, our platform offers valuable rankings and
-            descriptions to help you gain a deeper understanding of who you are.
-            Embark on a journey of self-discovery and embrace the diversity of
-            personalities that make our world so vibrant. Start exploring and
-            unravel the intricacies of personality traits today!
+      <div class="shadow-lg bg-[#6C757D]">
+        <div className="flex items-center p-24">
+          <img alt="logo" src="/logo.png" className="w-1/4 h-[230px]" />
+          <span className="w-1/4" />
+          <section className="w-2/4 ">
+            <h1 className="text-2xl font-bold mb-4">
+              Welcome to our Personality Traits website!
+            </h1>
+
+            <p className="text-left p-2">
+              Here, you can discover fascinating insights about yourself and
+              others through the exploration of various personality traits.
+              Whether you're curious about your dominant traits or seeking to
+              understand different personality types, our platform offers
+              valuable rankings and descriptions to help you gain a deeper
+              understanding of who you are. Embark on a journey of
+              self-discovery and embrace the diversity of personalities that
+              make our world so vibrant. Start exploring and unravel the
+              intricacies of personality traits today!
+            </p>
+            {!startQuestionnaire && (
+              <button
+                onClick={() => {
+                  handleScrollClick();
+                  setStartQuestionnaire(true);
+                }}
+                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 flex flex-col"
+              >
+                Get Started
+              </button>
+            )}
           </section>
-          <div>
-            <Button
-              variant="contained"
-              onClick={() => {
-                handleScrollClick();
-                setStartQuestionnaire(true);
-              }}
-              className="bg-blue-700"
-            >
-              Get Started
-            </Button>
-          </div>
         </div>
       </div>
+      {showResult && (
+        <div
+          className="flex justify-center items-center"
+          id="chart-container"
+        />
+      )}
       <div ref={scrollRef} class="h-100">
         {startQuestionnaire && userResponses.length !== questionnaire.length ? (
           <div class="flex justify-center items-center py-10 mx-10 ">
@@ -395,7 +467,7 @@ export const HomePageComponent = () => {
             {displayPersonalityTraits()}
             {showModal ? null : (
               <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded hidden"
+                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded hidden"
                 onClick={() => setTransition(true)}
                 disabled={transition}
               >
@@ -421,20 +493,33 @@ export const HomePageComponent = () => {
                 placeholder="Enter your email"
                 value={email}
                 onChange={handleEmailChange}
+                error={!isValidEmail}
+                helperText={!isValidEmail && "Invalid email format"}
                 fullWidth
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleEmailSubmit}>Send</Button>
-              <Button onClick={handleModalClose}>Cancel</Button>
+              <Button
+                onClick={handleEmailSubmit}
+                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded"
+              >
+                Send
+              </Button>
+              {/* <Button
+                onClick={handleModalClose}
+                className="bg-[#ADB5BD] hover:bg-red-800 text-white font-bold py-2 px-4 mt-4 rounded"
+              >
+                Cancel
+              </Button> */}
             </DialogActions>
           </Dialog>
         )}
-        {showResult && <div id="chart-container" />}
-        {emailSent && <p>Thank you! Results will be sent to your email.</p>}
-        <Button variant="contained" onClick={handleResultClick}>
-          Show Results
-        </Button>
+
+        {emailSent && (
+          <p className="bg-[#212529] text-[#fff]">
+            Thank you! Results will be sent to your email.
+          </p>
+        )}
       </div>
     </>
   );

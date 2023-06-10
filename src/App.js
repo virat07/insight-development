@@ -1,6 +1,6 @@
-import {HomePageComponent} from './components/homepage';
+import {HomePageComponent} from './components/Homepage';
 import './App.css';
-import Header from './components/header';
+import Header from './components/Header';
 // import Footer from './components/footer';
 
 function App() {
