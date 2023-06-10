@@ -239,7 +239,7 @@ export const HomePageComponent = () => {
         select("#tooltip").style("opacity", 0);
       });
 
-    const legendWidth = 200;
+    const legendWidth = 100;
     const legendHeight = 30 * personalityTraits.length;
     const legendMargin = 20;
 
@@ -332,7 +332,7 @@ export const HomePageComponent = () => {
           id="chart-container"
         />
       )}
-      <div ref={scrollRef} class="h-100">
+      <div ref={scrollRef} class="h-auto">
         {startQuestionnaire && userResponses.length !== questionnaire.length ? (
           <div class="flex justify-center items-center py-10 mx-10 ">
             {displayQuestionnaire()}
