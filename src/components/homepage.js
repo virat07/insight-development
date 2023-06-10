@@ -1,21 +1,22 @@
 import React, { useRef, useState, useEffect } from "react";
-import Button from "@mui/base/Button";
 import Card from "@mui/material/Card";
 // import CardActions from '@mui/material/CardActions';
 import CardContent from "@mui/material/CardContent";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import { TextField } from "@mui/material";
+
 import { select } from "d3-selection";
 import * as d3 from "d3";
 import "./Questionnaire.css";
 import html2canvas from "html2canvas";
-import emailjs from "emailjs-com";
-
+import {
+  personalityTraits,
+  questionnaire,
+  validateEmail,
+  sendEmail,
+} from "./Constant";
+import { Quickstart } from "./Quickstart";
+import { EmailModal } from "./EmailModal";
 // import logo from '../../public/logo.png';
+
 export const HomePageComponent = () => {
   const scrollRef = useRef(null);
   const handleScrollClick = () => {
@@ -23,79 +24,10 @@ export const HomePageComponent = () => {
     scrollRef.current.scrollIntoView({ behavior: "smooth" });
   };
 
-  const questionnaire = [
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Detailed", "Direct", "Considerate", "Enthusiastic"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Reserved", "Proactive", "Accommodating", "Analytical"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Courageous", "Diligent", "Service-oriented", "Adaptable"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Thoughtful", "Purposeful", "Appreciative", "Empowering"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Disciplined", "Patient", "Encouraging", "Flexible"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Consistent", "Valuing", "Interactive", "Engaging"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Objective", "Reliable", "Dynamic", "Supporting"],
-    },
-    {
-      question:
-        "Please rank the following traits according to what describes you best:",
-      options: ["Focused", "Determined", "Supportive", "Interactive"],
-    },
-  ];
-
   // Assume `userResponses` is an array containing the user's rankings for each question
   //   const userResponses = [2, 3, 1, 4, 2, 4, 3, 1];
 
   // Define the personality traits and their corresponding names
-  const personalityTraits = [
-    {
-      name: "Fiery Red",
-      description:
-        "Direct, decisive, focused, proactive, determined, purposeful, courageous, confident",
-      color: "#FF0000",
-    },
-    {
-      name: "Cool Blue",
-      description:
-        "Detailed, reserved, analytical, disciplined, diligent, thoughtful, consistent, objective",
-      color: "#0000FF",
-    },
-    {
-      name: "Earth Green",
-      description:
-        "Considerate, service-oriented, accommodating, appreciative, supportive, reliable, patient, valuing",
-      color: "#008000",
-    },
-    {
-      name: "Sunshine Yellow",
-      description:
-        "Enthusiastic, adaptable, empowering, flexible, encouraging, interactive, engaging, dynamic",
-      color: "#FFFF00",
-    },
-  ];
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [userResponses, setUserResponses] = useState([]);
@@ -146,10 +78,9 @@ export const HomePageComponent = () => {
   };
   const handleEmailSubmit = (event) => {
     if (validateEmail(email)) {
-
       setShowModal(false);
       handleResultClick();
-    //  setEmail(event.target.value);
+      //  setEmail(event.target.value);
       setEmailSent(true);
     } else {
       setEmailSent(false);
@@ -308,7 +239,7 @@ export const HomePageComponent = () => {
         select("#tooltip").style("opacity", 0);
       });
 
-    const legendWidth = 200;
+    const legendWidth = 100;
     const legendHeight = 30 * personalityTraits.length;
     const legendMargin = 20;
 
@@ -356,30 +287,6 @@ export const HomePageComponent = () => {
       .text((d) => d.name);
   };
 
-  const sendEmail = (image, src, email) => {
-    emailjs
-      .send(
-        "service_26xm8be",
-        "template_lb9v2ul",
-        {
-          contentID: src,
-          htmlBody:
-            '<html><body>this is an <img src="cid:' +
-            src +
-            '"> embedded picture.</body></html>',
-          to_email: email,
-          insights: image,
-        },
-        "HiVn_9D3ex98vxf7u"
-      )
-      .then((response) => {
-        console.log("Email sent successfully!", response.text);
-      })
-      .catch((error) => {
-        console.error("Error sending email:", error);
-      });
-  };
-
   useEffect(() => {
     if (showResult) {
       createPieChart();
@@ -410,109 +317,52 @@ export const HomePageComponent = () => {
     setShowResult(true);
   };
 
-  const validateEmail = (email) => {
-    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    return emailRegex.test(email);
-  };
-
   return (
     <>
       <div class="shadow-lg bg-[#6C757D]">
-        <div className="flex items-center p-24">
-          <img alt="logo" src="/logo.png" className="w-1/4 h-[230px]" />
-          <span className="w-1/4" />
-          <section className="w-2/4 ">
-            <h1 className="text-2xl font-bold mb-4">
-              Welcome to our Personality Traits website!
-            </h1>
-
-            <p className="text-left p-2">
-              Here, you can discover fascinating insights about yourself and
-              others through the exploration of various personality traits.
-              Whether you're curious about your dominant traits or seeking to
-              understand different personality types, our platform offers
-              valuable rankings and descriptions to help you gain a deeper
-              understanding of who you are. Embark on a journey of
-              self-discovery and embrace the diversity of personalities that
-              make our world so vibrant. Start exploring and unravel the
-              intricacies of personality traits today!
-            </p>
-            {!startQuestionnaire && (
-              <button
-                onClick={() => {
-                  handleScrollClick();
-                  setStartQuestionnaire(true);
-                }}
-                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 flex flex-col"
-              >
-                Get Started
-              </button>
-            )}
-          </section>
-        </div>
-      </div>
-      {showResult && (
-        <div
-          className="flex justify-center items-center"
-          id="chart-container"
+        <Quickstart
+          startQuestionnaire={startQuestionnaire}
+          handleScrollClick={handleScrollClick}
+          setStartQuestionnaire={setStartQuestionnaire}
         />
-      )}
-      <div ref={scrollRef} class="h-100">
-        {startQuestionnaire && userResponses.length !== questionnaire.length ? (
-          <div class="flex justify-center items-center py-10 mx-10 ">
-            {displayQuestionnaire()}
-          </div>
-        ) : (
-          <>
-            {displayPersonalityTraits()}
-            {showModal ? null : (
-              <button
-                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded hidden"
-                onClick={() => setTransition(true)}
-                disabled={transition}
-              >
-                Submit
-              </button>
-            )}
-          </>
+      </div>
+      <div className="bg-[#DEE2E6]">
+        {showResult && (
+          <div
+            className="flex justify-center items-center"
+            id="chart-container"
+          />
         )}
+        <div ref={scrollRef} class="h-auto">
+          {startQuestionnaire &&
+          userResponses.length !== questionnaire.length ? (
+            <div class="flex justify-center items-center py-10 mx-10 ">
+              {displayQuestionnaire()}
+            </div>
+          ) : (
+            <>
+              {displayPersonalityTraits()}
+              {showModal ? null : (
+                <button
+                  className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded hidden"
+                  onClick={() => setTransition(true)}
+                  disabled={transition}
+                >
+                  Submit
+                </button>
+              )}
+            </>
+          )}
+        </div>
         {showModal && (
-          <Dialog
-            open={showModal}
-            onClose={handleModalClose}
-            fullWidth="md"
-            maxWidth="md"
-          >
-            <DialogTitle>Send the insights on my email</DialogTitle>
-            <DialogContent>
-              <DialogContentText>Submit your email</DialogContentText>
-              <TextField
-                id="outlined-basic"
-                label="Email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={handleEmailChange}
-                error={!isValidEmail}
-                helperText={!isValidEmail && "Invalid email format"}
-                fullWidth
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button
-                onClick={handleEmailSubmit}
-                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded"
-              >
-                Send
-              </Button>
-              {/* <Button
-                onClick={handleModalClose}
-                className="bg-[#ADB5BD] hover:bg-red-800 text-white font-bold py-2 px-4 mt-4 rounded"
-              >
-                Cancel
-              </Button> */}
-            </DialogActions>
-          </Dialog>
+          <EmailModal
+            showModal={showModal}
+            handleModalClose={handleModalClose}
+            email={email}
+            handleEmailChange={handleEmailChange}
+            isValidEmail={isValidEmail}
+            handleEmailSubmit={handleEmailSubmit}
+          />
         )}
 
         {emailSent && (
