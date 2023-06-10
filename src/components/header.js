@@ -1,9 +1,11 @@
 import React from "react";
 class Header extends React.Component {
   render() {
-    return(
-      <header class='grid grid-flow-col p-5 m-2 shadow-lg'>
-        Header
+    return (
+      <header className="  p-5 bg-[#495057]">
+        <h1>
+          Insight
+        </h1>
       </header>
     );
   }
