@@ -326,31 +326,34 @@ export const HomePageComponent = () => {
           setStartQuestionnaire={setStartQuestionnaire}
         />
       </div>
-      {showResult && (
-        <div
-          className="flex justify-center items-center"
-          id="chart-container"
-        />
-      )}
-      <div ref={scrollRef} class="h-auto">
-        {startQuestionnaire && userResponses.length !== questionnaire.length ? (
-          <div class="flex justify-center items-center py-10 mx-10 ">
-            {displayQuestionnaire()}
-          </div>
-        ) : (
-          <>
-            {displayPersonalityTraits()}
-            {showModal ? null : (
-              <button
-                className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded hidden"
-                onClick={() => setTransition(true)}
-                disabled={transition}
-              >
-                Submit
-              </button>
-            )}
-          </>
+      <div className="bg-[#DEE2E6]">
+        {showResult && (
+          <div
+            className="flex justify-center items-center"
+            id="chart-container"
+          />
         )}
+        <div ref={scrollRef} class="h-auto">
+          {startQuestionnaire &&
+          userResponses.length !== questionnaire.length ? (
+            <div class="flex justify-center items-center py-10 mx-10 ">
+              {displayQuestionnaire()}
+            </div>
+          ) : (
+            <>
+              {displayPersonalityTraits()}
+              {showModal ? null : (
+                <button
+                  className="bg-[#ADB5BD] hover:bg-blue-700 text-white font-bold py-2 px-4 mt-4 rounded hidden"
+                  onClick={() => setTransition(true)}
+                  disabled={transition}
+                >
+                  Submit
+                </button>
+              )}
+            </>
+          )}
+        </div>
         {showModal && (
           <EmailModal
             showModal={showModal}
